@@ -5,90 +5,288 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DuckDB Viz Spike</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 16px;
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef3fa;
+      --text: #142136;
+      --muted: #4b5f7c;
+      --primary: #1f6feb;
+      --primary-hover: #175bcc;
+      --border: #d7e1ef;
+      --shadow: 0 12px 28px rgba(15, 28, 52, 0.08);
+      --radius: 14px;
     }
-    #sqlEditor {
-      width: 100%;
-      min-height: 140px;
-      font-family: "Courier New", monospace;
-      font-size: 14px;
-      padding: 8px;
+
+    * {
       box-sizing: border-box;
     }
+
+    body {
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, #dce8ff 0, transparent 40%),
+        radial-gradient(circle at left 20%, #e7f8ff 0, transparent 32%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 24px 14px 40px;
+    }
+
+    .app-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(22px, 2.2vw, 32px);
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+    }
+
+    .tables-hint {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    code {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 13px;
+    }
+
+    #sqlEditor {
+      width: 100%;
+      min-height: 180px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fbfdff;
+      color: #0d1b2e;
+      resize: vertical;
+    }
+
+    #sqlEditor:focus-visible,
+    select:focus-visible,
+    button:focus-visible {
+      outline: 2px solid #7aa2f5;
+      outline-offset: 2px;
+    }
+
     .controls {
-      margin: 8px 0;
+      margin: 12px 0;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
       align-items: center;
     }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: #ecf1fb;
+      color: #1f3350;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 120ms ease, transform 120ms ease, border-color 120ms ease;
+    }
+
+    button:hover {
+      background: #e3ebfa;
+      border-color: #c6d8f5;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+
     #runBtn {
       font-size: 18px;
       font-weight: 700;
-      padding: 10px 22px;
+      padding: 12px 26px;
+      background: linear-gradient(130deg, var(--primary), #4586f5);
+      color: #fff;
+      min-width: 120px;
     }
+
+    #runBtn:hover {
+      background: linear-gradient(130deg, var(--primary-hover), #326fd8);
+      border-color: transparent;
+    }
+
     #resultsBox {
-      border: 1px solid #cfcfcf;
-      border-radius: 6px;
-      padding: 12px;
-      margin-top: 12px;
-      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fafe 100%);
     }
+
     #status {
-      margin: 8px 0;
-      color: #0a4;
+      margin: 10px 2px 4px;
+      color: #0f7a4d;
+      font-weight: 700;
     }
+
     #status.error {
-      color: #c00;
-      font-weight: 600;
+      color: #c02222;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 14px;
+      margin-top: 10px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
     }
+
     th, td {
-      border: 1px solid #ddd;
-      padding: 6px 8px;
+      border-bottom: 1px solid #e5ecf7;
+      padding: 8px 10px;
       text-align: left;
       vertical-align: top;
     }
+
     th {
-      background: #f3f3f3;
+      background: #edf3fc;
+      color: #22395b;
+      letter-spacing: 0.01em;
+      font-weight: 700;
     }
+
+    tbody tr:nth-child(even) {
+      background: #fbfcfe;
+    }
+
+    #tableContainer {
+      overflow-x: auto;
+    }
+
+    #chartContainer {
+      width: 100%;
+      max-width: 100%;
+    }
+
     #chartBuilder {
-      border: 1px solid #ddd;
+      border: 1px solid var(--border);
       padding: 12px;
-      margin-top: 8px;
+      border-radius: 12px;
+      margin-top: 10px;
+      background: #fcfdff;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
+
     #chartBuilder label {
       display: block;
       font-size: 12px;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
+      color: #445b7a;
+      font-weight: 700;
     }
+
     #chartBuilder select,
     #chartBuilder button {
       width: 100%;
-      padding: 6px;
-      box-sizing: border-box;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
     }
+
+    #chartBuilder button {
+      background: #dff1e7;
+      border-color: #b9dec8;
+      color: #1e5c3b;
+    }
+
+    #chartBuilder button:hover {
+      background: #d3eada;
+      border-color: #9fcfb4;
+    }
+
     #chartError {
       margin-top: 8px;
-      color: #c00;
+      color: #c02222;
       font-weight: 600;
+    }
+
+    #chartTarget {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      width: 100%;
+      max-width: 100%;
+      padding: 10px;
+      min-height: 540px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    #chartTarget .vega-embed,
+    #chartTarget .vega-embed > div,
+    #chartTarget svg,
+    #chartTarget canvas {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    #toggleTable,
+    #toggleChart,
+    #prevPageBtn,
+    #nextPageBtn {
+      padding: 8px 12px;
+    }
+
+    #pageIndicator {
+      font-weight: 700;
+      color: #314a6c;
+      padding: 0 6px;
+    }
+
+    @media (max-width: 860px) {
+      .app-shell {
+        padding: 16px;
+      }
+      #sqlEditor {
+        min-height: 150px;
+      }
+      #chartTarget {
+        min-height: 420px;
+      }
+      #runBtn {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
+  <main class="app-shell">
   <h1>Quick and Dirty DuckDB-WASM Query + Vega Lite Chart Spike</h1>
 
-  <div>DuckDB tables: <code>sample_sales</code>, <code>sample_events</code></div>
+  <div class="tables-hint">DuckDB tables: <code>sample_sales</code>, <code>sample_events</code></div>
   <textarea id="sqlEditor"></textarea>
 
   <div class="controls">
@@ -151,12 +349,13 @@
       <div id="chartTarget"></div>
     </div>
 
-    <div id="paginationControls" class="controls">
+  <div id="paginationControls" class="controls">
       <button id="prevPageBtn">Prev</button>
       <span id="pageIndicator"></span>
       <button id="nextPageBtn">Next</button>
     </div>
   </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>

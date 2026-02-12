@@ -21,6 +21,7 @@ const state = {
 };
 
 const el = {};
+let resizeTimer = null;
 
 function setStatus(text, isError = false) {
   el.status.textContent = text;
@@ -256,11 +257,44 @@ function buildVegaLiteSpec(cfg) {
   const xMeta = state.lastResult.fieldTypes[cfg.xField];
   const xType = xMeta ? xMeta.vegaType : "nominal";
   const categoryType = xType === "temporal" ? "temporal" : "nominal";
+  const barXType = xType === "temporal" || xType === "quantitative" ? "ordinal" : xType;
+  const xAxisTitle = cfg.xField;
+  const yAxisTitle = cfg.yField || "value";
+  const baseSpec = {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    width: 900,
+    height: 460,
+    autosize: { type: "fit-x", contains: "padding" },
+    padding: { left: 10, right: 10, top: 12, bottom: 8 },
+    config: {
+      view: { stroke: null },
+      axis: {
+        labelFontSize: 12,
+        titleFontSize: 13,
+        gridColor: "#e6edf8",
+        tickColor: "#c8d5ea",
+        domainColor: "#b7c8e4"
+      },
+      legend: {
+        labelFontSize: 12,
+        titleFontSize: 13,
+        orient: "bottom",
+        direction: "horizontal",
+        labelLimit: 140,
+        symbolLimit: 40
+      }
+    }
+  };
 
   if (cfg.chartType === "pie") {
     return {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-      mark: "arc",
+      ...baseSpec,
+      mark: {
+        type: "arc",
+        innerRadius: 58,
+        stroke: "#ffffff",
+        strokeWidth: 1.2
+      },
       encoding: {
         theta: { field: "value", type: "quantitative" },
         color: { field: "category", type: categoryType }
@@ -270,28 +304,68 @@ function buildVegaLiteSpec(cfg) {
 
   if (cfg.chartType === "stacked_bar") {
     return {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-      mark: "bar",
+      ...baseSpec,
+      mark: { type: "bar", cornerRadiusTopLeft: 3, cornerRadiusTopRight: 3 },
       encoding: {
-        x: { field: "x", type: xType },
-        y: { field: "value", type: "quantitative" },
+        x: { field: "x", type: barXType, scale: { range: "width" }, axis: { title: xAxisTitle } },
+        y: { field: "value", type: "quantitative", axis: { title: yAxisTitle } },
         color: { field: "stack", type: "nominal" }
       }
     };
   }
 
   const base = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-    mark: cfg.chartType === "line" ? "line" : "bar",
+    ...baseSpec,
+    mark:
+      cfg.chartType === "line"
+        ? { type: "line", point: true, strokeWidth: 2.4 }
+        : { type: "bar", cornerRadiusTopLeft: 3, cornerRadiusTopRight: 3 },
     encoding: {
-      x: { field: "x", type: xType },
-      y: { field: "value", type: "quantitative" }
+      x: {
+        field: "x",
+        type: cfg.chartType === "line" ? xType : barXType,
+        scale: { range: "width" },
+        axis: { title: xAxisTitle }
+      },
+      y: { field: "value", type: "quantitative", axis: { title: yAxisTitle } }
     }
   };
   if (cfg.groupField) {
     base.encoding.color = { field: "g", type: "nominal" };
   }
   return base;
+}
+
+function getChartPixelWidth() {
+  const getInnerWidth = (node) => {
+    if (!node) {
+      return 0;
+    }
+    const rect = node.getBoundingClientRect();
+    if (!rect.width) {
+      return 0;
+    }
+    const styles = window.getComputedStyle(node);
+    const paddingX = parseFloat(styles.paddingLeft || "0") + parseFloat(styles.paddingRight || "0");
+    return Math.max(0, rect.width - paddingX);
+  };
+
+  const resultsInner = getInnerWidth(el.resultsBox);
+  const targetPaddingX =
+    parseFloat(window.getComputedStyle(el.chartTarget).paddingLeft || "0") +
+    parseFloat(window.getComputedStyle(el.chartTarget).paddingRight || "0");
+  const available = resultsInner > 0 ? resultsInner - targetPaddingX - 2 : 760;
+  const constrainedWidth = Math.max(240, Math.floor(available));
+  return Math.min(constrainedWidth, 1200);
+}
+
+function getChartPixelHeight() {
+  const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 900;
+  const resultsHeight = el.resultsBox ? el.resultsBox.clientHeight : 0;
+  const basedOnViewport = Math.round(viewportHeight * 0.56);
+  const basedOnResults = resultsHeight > 0 ? Math.round(resultsHeight * 0.62) : 0;
+  const preferred = Math.max(basedOnViewport, basedOnResults, 320);
+  return Math.max(320, Math.min(preferred, 720));
 }
 
 function toVegaSafeValue(value) {
@@ -418,6 +492,8 @@ async function applyChart() {
     });
 
     const spec = buildVegaLiteSpec(cfg);
+    spec.width = getChartPixelWidth();
+    spec.height = getChartPixelHeight();
     spec.data = { values };
     await window.vegaEmbed(el.chartTarget, spec, { actions: false });
   } catch (err) {
@@ -486,12 +562,24 @@ function bindEvents() {
     }
     await applyChart();
   });
+
+  window.addEventListener("resize", () => {
+    if (resizeTimer) {
+      clearTimeout(resizeTimer);
+    }
+    resizeTimer = setTimeout(async () => {
+      if (state.mode === "chart" && state.currentSql) {
+        await applyChart();
+      }
+    }, 150);
+  });
 }
 
 function cacheDom() {
   el.sqlEditor = document.getElementById("sqlEditor");
   el.runBtn = document.getElementById("runBtn");
   el.status = document.getElementById("status");
+  el.resultsBox = document.getElementById("resultsBox");
   el.toggleTable = document.getElementById("toggleTable");
   el.toggleChart = document.getElementById("toggleChart");
   el.tableContainer = document.getElementById("tableContainer");
