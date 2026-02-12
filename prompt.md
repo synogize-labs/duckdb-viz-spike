@@ -8,63 +8,22 @@ This repo includes codex/rules/spike.rules. Do not request to run blocked comman
 Only request command execution for: node generate_data.js (and expect it to require approval).
 
 ========================
-STRICT SAFETY CONSTRAINTS
+SAFETY REQUIREMENTS
 ========================
 
-You MUST obey the following constraints:
-
-1) FILE SYSTEM SAFETY
-- You may ONLY read and write files inside the current repository directory.
-- You may NOT delete any files or directories.
-- You may NOT modify any files outside this repository.
-- If you need to overwrite an existing file (index.html, app.js, README.md, generate_data.js, data/*):
-    - First create a backup copy next to it with extension ".bak"
-      (example: app.js.bak)
-    - Then write the new version.
-- You may NOT rename directories.
-- You may NOT move files outside the repo.
-
-2) COMMAND EXECUTION SAFETY
-- You may NOT execute any shell commands except:
+- You may only read and write files inside this repository.
+- Do not delete files.
+- Do not rename or move files.
+- Do not modify files outside this repository.
+- Do not run git commands.
+- Do not install dependencies or create package.json.
+- Do not create /vendor or node_modules.
+- Do not use shell wrappers (bash, sh, zsh, powershell).
+- You may run read-only inspection commands (ls, cat, rg, pwd).
+- The only execution command you may run is:
       node generate_data.js
-- You may NOT run:
-      git
-      rm
-      mv
-      cp
-      npm
-      npx
-      yarn
-      pnpm
-      curl
-      wget
-      brew
-      apt
-      sudo
-      bash scripts
-      background processes
-- You may NOT install dependencies.
-- You may NOT create package.json or node_modules.
-- You may NOT spawn any subprocess except the single allowed Node command.
-
-3) NETWORK SAFETY
-- You may NOT make any network write operations.
-- CDN script tags in index.html are allowed.
-- You may NOT download or install runtime dependencies.
-
-4) RUNTIME TOOLING SAFETY
-- No bundlers.
-- No build tools.
-- No /vendor directory.
-- No package.json.
-- No TypeScript.
-- No transpilation.
-- No external CSS frameworks.
-
-5) SCOPE SAFETY
-- Everything must run in the browser at runtime.
-- Node.js is allowed ONLY for generate_data.js to create CSV files.
-- Do not introduce additional scripts, utilities, or automation beyond what tasks.md requires.
+  and it must require my approval.
+- If overwriting a file, create a .bak backup first.
 
 If any step would violate these rules, STOP and explain why instead of proceeding.
 
