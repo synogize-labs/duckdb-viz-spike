@@ -1,141 +1,72 @@
 # codex/rules/spike.rules
-# Purpose: keep Codex from running risky commands outside the sandbox.
-# Notes:
-# - Rules apply to "commands outside the sandbox". They are an additional guardrail.
-# - Most restrictive decision wins: forbidden > prompt > allow. :contentReference[oaicite:1]{index=1}
 
-# ---- Hard blocks: shells / wrappers (too much can be hidden in strings) ----
-prefix_rule(
-  pattern=["bash"],
-  decision="forbidden",
-  justification="Shell execution is blocked. Do not use bash wrappers; run only explicit safe commands.",
-  match=["bash -lc 'echo hi'"],
-)
-
-prefix_rule(
-  pattern=["sh"],
-  decision="forbidden",
-  justification="Shell execution is blocked.",
-  match=["sh -c 'echo hi'"],
-)
-
-prefix_rule(
-  pattern=["zsh"],
-  decision="forbidden",
-  justification="Shell execution is blocked.",
-  match=["zsh -lc 'echo hi'"],
-)
-
-prefix_rule(
-  pattern=["powershell"],
-  decision="forbidden",
-  justification="Shell execution is blocked.",
-  match=["powershell -Command \"echo hi\""],
-)
-
-# ---- Hard blocks: git operations (avoid history edits, resets, cleans) ----
-prefix_rule(
-  pattern=["git"],
-  decision="forbidden",
-  justification="Git commands are blocked. Do not modify history or run git operations from Codex.",
-  match=["git status", "git reset --hard", "git clean -fd"],
-)
-
-# ---- Hard blocks: deletion/move/copy (avoid destructive filesystem operations) ----
+# Block destructive filesystem operations
 prefix_rule(
   pattern=["rm"],
   decision="forbidden",
-  justification="Deletion is blocked. Do not remove files or directories.",
-  match=["rm -rf .", "rm -f app.js"],
+  justification="Deletion is not allowed.",
 )
 
 prefix_rule(
   pattern=["mv"],
   decision="forbidden",
-  justification="Moves/renames are blocked to avoid unintended data loss.",
-  match=["mv app.js app.old.js"],
+  justification="Renaming/moving files is not allowed.",
 )
 
+# Block git
 prefix_rule(
-  pattern=["cp"],
+  pattern=["git"],
   decision="forbidden",
-  justification="Copies are blocked outside sandbox to reduce unintended data duplication.",
-  match=["cp -r data data_backup"],
+  justification="Git commands are not allowed.",
 )
 
-# ---- Hard blocks: package managers (no installs, no toolchain creep) ----
+# Block package managers
 prefix_rule(
   pattern=["npm"],
   decision="forbidden",
-  justification="Dependency installs are blocked (no npm). Use CDN-only runtime per repo spec.",
-  match=["npm install", "npm i -g something"],
+  justification="No npm installs.",
 )
 
 prefix_rule(
   pattern=["npx"],
   decision="forbidden",
-  justification="Dependency installs/executions are blocked (no npx).",
-  match=["npx vite"],
+  justification="No npx.",
 )
 
 prefix_rule(
   pattern=["yarn"],
   decision="forbidden",
-  justification="Dependency installs are blocked.",
-  match=["yarn add vega"],
+  justification="No yarn.",
 )
 
 prefix_rule(
   pattern=["pnpm"],
   decision="forbidden",
-  justification="Dependency installs are blocked.",
-  match=["pnpm install"],
+  justification="No pnpm.",
 )
 
-# ---- Hard blocks: downloaders (keep it offline / deterministic) ----
-prefix_rule(
-  pattern=["curl"],
-  decision="forbidden",
-  justification="Network downloads are blocked. Use CDN script tags only in index.html.",
-  match=["curl -L https://example.com/file"],
-)
-
-prefix_rule(
-  pattern=["wget"],
-  decision="forbidden",
-  justification="Network downloads are blocked.",
-  match=["wget https://example.com/file"],
-)
-
-# ---- Hard blocks: privilege escalation / system package managers ----
+# Block system-level operations
 prefix_rule(
   pattern=["sudo"],
   decision="forbidden",
-  justification="Privilege escalation is blocked.",
-  match=["sudo rm -rf /"],
+  justification="No privilege escalation.",
 )
 
 prefix_rule(
   pattern=["brew"],
   decision="forbidden",
-  justification="System package manager is blocked.",
-  match=["brew install xyz"],
+  justification="No system package manager.",
 )
 
 prefix_rule(
   pattern=["apt"],
   decision="forbidden",
-  justification="System package manager is blocked.",
-  match=["apt-get install xyz"],
+  justification="No system package manager.",
 )
 
-# ---- Controlled allowlist: Node ----
-# We PROMPT (not allow) for any node invocation. This is conservative.
-# You will approve ONLY: node generate_data.js
+# Allow node, but require approval
 prefix_rule(
   pattern=["node"],
   decision="prompt",
-  justification="Node is allowed only for local data generation. Approve ONLY: `node generate_data.js`.",
-  match=["node generate_data.js"],
-  not_match=["python -m http.server"],
+  justification="Only allow node generate_data.js after approval.",
 )
