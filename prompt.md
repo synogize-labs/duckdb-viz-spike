@@ -1,4 +1,4 @@
-You are operating inside a local git repository that contains SPEC.md and tasks.md.
+You are operating inside a local git repository that contains SPEC.md,  tasks.md and prompt.md.
 
 You are sandboxed to this repository only.
 
