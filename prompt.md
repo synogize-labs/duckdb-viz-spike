@@ -2,6 +2,11 @@ You are operating inside a local git repository that contains SPEC.md,  tasks.md
 
 You are sandboxed to this repository only.
 
+
+EXECUTION POLICY:
+This repo includes codex/rules/spike.rules. Do not request to run blocked commands or use shell wrappers.
+Only request command execution for: node generate_data.js (and expect it to require approval).
+
 ========================
 STRICT SAFETY CONSTRAINTS
 ========================
