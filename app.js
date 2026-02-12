@@ -297,7 +297,11 @@ function buildVegaLiteSpec(cfg) {
       },
       encoding: {
         theta: { field: "value", type: "quantitative" },
-        color: { field: "category", type: categoryType }
+        color: { field: "category", type: categoryType },
+        tooltip: [
+          { field: "category", type: categoryType, title: xAxisTitle },
+          { field: "value", type: "quantitative", title: yAxisTitle }
+        ]
       }
     };
   }
@@ -309,7 +313,12 @@ function buildVegaLiteSpec(cfg) {
       encoding: {
         x: { field: "x", type: barXType, scale: { range: "width" }, axis: { title: xAxisTitle } },
         y: { field: "value", type: "quantitative", axis: { title: yAxisTitle } },
-        color: { field: "stack", type: "nominal" }
+        color: { field: "stack", type: "nominal" },
+        tooltip: [
+          { field: "x", type: xType, title: xAxisTitle },
+          { field: "stack", type: "nominal", title: cfg.stackField },
+          { field: "value", type: "quantitative", title: yAxisTitle }
+        ]
       }
     };
   }
@@ -333,6 +342,11 @@ function buildVegaLiteSpec(cfg) {
   if (cfg.groupField) {
     base.encoding.color = { field: "g", type: "nominal" };
   }
+  base.encoding.tooltip = [
+    { field: "x", type: xType, title: xAxisTitle },
+    ...(cfg.groupField ? [{ field: "g", type: "nominal", title: cfg.groupField }] : []),
+    { field: "value", type: "quantitative", title: yAxisTitle }
+  ];
   return base;
 }
 
