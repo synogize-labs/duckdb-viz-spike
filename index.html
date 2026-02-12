@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DuckDB Viz Spike</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 16px;
+    }
+    #sqlEditor {
+      width: 100%;
+      min-height: 140px;
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .controls {
+      margin: 8px 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #runBtn {
+      font-size: 18px;
+      font-weight: 700;
+      padding: 10px 22px;
+    }
+    #resultsBox {
+      border: 1px solid #cfcfcf;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+      background: #fafafa;
+    }
+    #status {
+      margin: 8px 0;
+      color: #0a4;
+    }
+    #status.error {
+      color: #c00;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f3f3f3;
+    }
+    #chartBuilder {
+      border: 1px solid #ddd;
+      padding: 12px;
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    #chartBuilder label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    #chartBuilder select,
+    #chartBuilder button {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    #chartError {
+      margin-top: 8px;
+      color: #c00;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h1>Quick and Dirty DuckDB-WASM Query + Vega Lits Chart Spike</h1>
+
+  <textarea id="sqlEditor"></textarea>
+
+  <div class="controls">
+    <button id="runBtn">Run</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="resultsBox">
+    <div class="controls">
+      <button id="toggleTable">Table</button>
+      <button id="toggleChart">Chart</button>
+    </div>
+
+    <div id="tableContainer"></div>
+
+    <div id="chartContainer" style="display:none">
+      <div id="chartBuilder">
+        <div>
+          <label for="chartType">Chart Type</label>
+          <select id="chartType">
+            <option value="line">line</option>
+            <option value="bar">bar</option>
+            <option value="stacked_bar">stacked_bar</option>
+            <option value="pie">pie</option>
+          </select>
+        </div>
+        <div>
+          <label for="xField">X Field</label>
+          <select id="xField"></select>
+        </div>
+        <div>
+          <label for="yField">Y Field</label>
+          <select id="yField"></select>
+        </div>
+        <div>
+          <label for="agg">Aggregation</label>
+          <select id="agg">
+            <option value="sum">sum</option>
+            <option value="avg">avg</option>
+            <option value="min">min</option>
+            <option value="max">max</option>
+            <option value="count">count</option>
+          </select>
+        </div>
+        <div>
+          <label for="groupField">Group Field (optional)</label>
+          <select id="groupField"></select>
+        </div>
+        <div>
+          <label for="stackField">Stack Field (stacked bar)</label>
+          <select id="stackField"></select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="applyChartBtn">Apply Chart</button>
+        </div>
+      </div>
+      <div id="chartError"></div>
+      <div id="chartTarget"></div>
+    </div>
+
+    <div id="paginationControls" class="controls">
+      <button id="prevPageBtn">Prev</button>
+      <span id="pageIndicator"></span>
+      <button id="nextPageBtn">Next</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
